@@ -1,0 +1,2304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calgary School Division - Classroom Composition Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .info {
+            padding: 6px 8px;
+            background: white;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .info h4 { margin: 0 0 5px; color: #333; }
+        .legend { padding: 10px; line-height: 20px; color: #555; }
+        .legend-item { margin: 5px 0; font-size: 13px; }
+        .legend-color {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+        .popup-content { min-width: 200px; }
+        .school-name {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        .category-badge {
+            background: #666;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .cat1-badge { background: #FF0000; }
+        .cat2-badge { background: #FF8C00; }
+        .cat3-badge { background: #FFD700; color: #333; }
+        .cat4-badge { background: #228B22; }
+        .cat5-badge { background: #2776EA; }
+        .data-row {
+            margin: 4px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .data-label {
+            display: inline-block;
+            width: 80px;
+            font-weight: 500;
+        }
+        .data-value {
+            font-weight: bold;
+            font-size: 16px;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .low-value { color: #00B050; }
+        .med-value { color: #FFC000; }
+        .high-value { color: #FF0000; }
+        .asterisk-value { color: #0000FF; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <script>
+        const schools = [
+  {
+    "name": "Midsun School",
+    "lat": 50.9018454,
+    "lon": -114.030961,
+    "low": 7,
+    "medium": 77,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "The Hamptons School",
+    "lat": 51.1435117,
+    "lon": -114.1485088,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Hidden Valley School",
+    "lat": 51.1502533,
+    "lon": -114.1195302,
+    "low": 6,
+    "medium": 16,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Crossing Park School",
+    "lat": 51.1157188,
+    "lon": -113.9665836,
+    "low": 16,
+    "medium": 82,
+    "high": 4,
+    "category": 3
+  },
+  {
+    "name": "Battalion Park School",
+    "lat": 51.0235697,
+    "lon": -114.1820473,
+    "low": 7,
+    "medium": 12,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Monterey Park School",
+    "lat": 51.0775259,
+    "lon": -113.9305064,
+    "low": 3,
+    "medium": 23,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Douglasdale School",
+    "lat": 50.9351812,
+    "lon": -113.982901,
+    "low": 3,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Scenic Acres School",
+    "lat": 51.12016860000001,
+    "lon": -114.2157006,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Coventry Hills School",
+    "lat": 51.1655592,
+    "lon": -114.0514003,
+    "low": 2,
+    "medium": 24,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Colonel Sanders School",
+    "lat": 51.099943,
+    "lon": -114.0754062,
+    "low": 4,
+    "medium": 10,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Piitoayis Family School",
+    "lat": 51.03432919999999,
+    "lon": -114.0193492,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Valley Creek School",
+    "lat": 51.150263,
+    "lon": -114.1166811,
+    "low": 3,
+    "medium": 116,
+    "high": 10,
+    "category": 2
+  },
+  {
+    "name": "Somerset School",
+    "lat": 50.897362,
+    "lon": -114.085453,
+    "low": 2,
+    "medium": 9,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Centennial High School",
+    "lat": 50.9060652,
+    "lon": -114.0534426,
+    "low": 22,
+    "medium": 184,
+    "high": 3,
+    "category": 3
+  },
+  {
+    "name": "Arbour Lake Middle School",
+    "lat": 51.13465619999999,
+    "lon": -114.2094535,
+    "low": 0,
+    "medium": 129,
+    "high": 21,
+    "category": 1
+  },
+  {
+    "name": "Chaparral School",
+    "lat": 50.8832861,
+    "lon": -114.0453025,
+    "low": 4,
+    "medium": 18,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Citadel Park School",
+    "lat": 51.145442,
+    "lon": -114.173844,
+    "low": 3,
+    "medium": 16,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Mountain Park School",
+    "lat": 50.9236099,
+    "lon": -113.982522,
+    "low": 3,
+    "medium": 67,
+    "high": 4,
+    "category": 2
+  },
+  {
+    "name": "Radisson Park School",
+    "lat": 51.04614489999999,
+    "lon": -113.992381,
+    "low": 0,
+    "medium": 15,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Tuscany School",
+    "lat": 51.117952,
+    "lon": -114.245817,
+    "low": 10,
+    "medium": 14,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Taradale School",
+    "lat": 51.1212477,
+    "lon": -113.9375663,
+    "low": 6,
+    "medium": 22,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Samuel W. Shaw School",
+    "lat": 50.9083482,
+    "lon": -114.0876668,
+    "low": 4,
+    "medium": 114,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Panorama Hills School",
+    "lat": 51.1553737,
+    "lon": -114.0857685,
+    "low": 5,
+    "medium": 15,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "McKenzie Towne School",
+    "lat": 50.9270407,
+    "lon": -113.9668309,
+    "low": 5,
+    "medium": 18,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Bridlewood School",
+    "lat": 50.902448,
+    "lon": -114.11058,
+    "low": 2,
+    "medium": 20,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Cranston School",
+    "lat": 50.886709,
+    "lon": -113.9872732,
+    "low": 6,
+    "medium": 19,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Evergreen School",
+    "lat": 50.9169122,
+    "lon": -114.1065022,
+    "low": 4,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Royal Oak School",
+    "lat": 51.14559509999999,
+    "lon": -114.2221234,
+    "low": 3,
+    "medium": 20,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Saddle Ridge School",
+    "lat": 51.1371226,
+    "lon": -113.93711,
+    "low": 3,
+    "medium": 19,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "West Springs School",
+    "lat": 51.058729,
+    "lon": -114.2169411,
+    "low": 9,
+    "medium": 16,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Nose Creek School",
+    "lat": 51.1670804,
+    "lon": -114.0607626,
+    "low": 8,
+    "medium": 109,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Captain Nichola Goddard School",
+    "lat": 51.1625322,
+    "lon": -114.0887103,
+    "low": 32,
+    "medium": 194,
+    "high": 8,
+    "category": 3
+  },
+  {
+    "name": "Ted Harrison School",
+    "lat": 51.1169818,
+    "lon": -113.9282637,
+    "low": 13,
+    "medium": 103,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Twelve Mile Coulee School",
+    "lat": 51.12318459999999,
+    "lon": -114.2431311,
+    "low": 2,
+    "medium": 75,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Robert Thirsk High School",
+    "lat": 51.1307325,
+    "lon": -114.1952564,
+    "low": 7,
+    "medium": 174,
+    "high": 13,
+    "category": 2
+  },
+  {
+    "name": "Nelson Mandela High School",
+    "lat": 51.1220951,
+    "lon": -113.9486869,
+    "low": 71,
+    "medium": 171,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Buffalo Rubbing Stone School",
+    "lat": 51.1686141,
+    "lon": -114.0878563,
+    "low": 5,
+    "medium": 20,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Eric Harvie School",
+    "lat": 51.12818180000001,
+    "lon": -114.2516269,
+    "low": 4,
+    "medium": 14,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Dr. Roberta Bondar School",
+    "lat": 51.0506701,
+    "lon": -114.2054257,
+    "low": 9,
+    "medium": 14,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "McKenzie Highlands School",
+    "lat": 50.9109036,
+    "lon": -113.9698721,
+    "low": 10,
+    "medium": 74,
+    "high": 5,
+    "category": 3
+  },
+  {
+    "name": "Hugh A. Bennett School",
+    "lat": 51.1315615,
+    "lon": -113.9286827,
+    "low": 6,
+    "medium": 22,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "William D. Pratt School",
+    "lat": 51.1492205,
+    "lon": -114.2241649,
+    "low": 2,
+    "medium": 122,
+    "high": 3,
+    "category": 2
+  },
+  {
+    "name": "Peter Lougheed School",
+    "lat": 51.1307008,
+    "lon": -113.9556932,
+    "low": 9,
+    "medium": 118,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Marshall Springs School",
+    "lat": 50.91117999999999,
+    "lon": -114.11258,
+    "low": 12,
+    "medium": 74,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Dr. Martha Cohen School",
+    "lat": 50.9170917,
+    "lon": -113.9447446,
+    "low": 17,
+    "medium": 128,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "New Brighton School",
+    "lat": 50.9193781,
+    "lon": -113.9542059,
+    "low": 4,
+    "medium": 21,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Dr. George Stanley School",
+    "lat": 50.8827416,
+    "lon": -113.9781359,
+    "low": 9,
+    "medium": 58,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Auburn Bay School",
+    "lat": 50.8970323,
+    "lon": -113.9619352,
+    "low": 5,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Copperfield School",
+    "lat": 50.9146143,
+    "lon": -113.9291252,
+    "low": 5,
+    "medium": 21,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "West Ridge School",
+    "lat": 51.05851999999999,
+    "lon": -114.214026,
+    "low": 31,
+    "medium": 102,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Kenneth D. Taylor School",
+    "lat": 51.165108,
+    "lon": -114.117344,
+    "low": 6,
+    "medium": 19,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Niitsitapi Learning Centre",
+    "lat": 51.0209276,
+    "lon": -113.9795203,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Manmeet Singh Bhullar School",
+    "lat": 51.1232804,
+    "lon": -113.9594645,
+    "low": 3,
+    "medium": 19,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Ron Southern School",
+    "lat": 50.880677,
+    "lon": -114.0861952,
+    "low": 5,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Griffith Woods School",
+    "lat": 51.0307367,
+    "lon": -114.1948155,
+    "low": 27,
+    "medium": 77,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Joane Cardinal-Schubert High School",
+    "lat": 50.8779338,
+    "lon": -113.9448852,
+    "low": 45,
+    "medium": 173,
+    "high": 4,
+    "category": 3
+  },
+  {
+    "name": "Dr. Freda Miller School",
+    "lat": 50.92087780000001,
+    "lon": -114.1158991,
+    "low": 3,
+    "medium": 18,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Sibylla Kiddle School",
+    "lat": 50.8777591,
+    "lon": -113.9708447,
+    "low": 8,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Northern Lights School",
+    "lat": 51.15724969999999,
+    "lon": -114.0469808,
+    "low": 3,
+    "medium": 19,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Mahogany School",
+    "lat": 50.9023717,
+    "lon": -113.9266889,
+    "low": 4,
+    "medium": 28,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Lakeshore School",
+    "lat": 50.8958871,
+    "lon": -113.954317,
+    "low": 22,
+    "medium": 90,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Bayside School",
+    "lat": 50.8882015,
+    "lon": -113.947782,
+    "low": 7,
+    "medium": 19,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Prairie Sky School",
+    "lat": 51.1626822,
+    "lon": -113.9574014,
+    "low": 18,
+    "medium": 103,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "North Trail High School",
+    "lat": 51.1674871,
+    "lon": -114.0660986,
+    "low": 25,
+    "medium": 218,
+    "high": 9,
+    "category": 3
+  },
+  {
+    "name": "Richmond School",
+    "lat": 51.0302194,
+    "lon": -114.1148949,
+    "low": 4,
+    "medium": 9,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Alex Ferguson School",
+    "lat": 51.03940189999999,
+    "lon": -114.1229514,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Jennie Elliott School",
+    "lat": 50.9962463,
+    "lon": -114.1272885,
+    "low": 9,
+    "medium": 14,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Killarney School",
+    "lat": 51.0281635,
+    "lon": -114.1349627,
+    "low": 5,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Altadore School",
+    "lat": 51.0139471,
+    "lon": -114.0996365,
+    "low": 5,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Belvedere Parkway School",
+    "lat": 51.0929848,
+    "lon": -114.2114923,
+    "low": 2,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Bowcroft School",
+    "lat": 51.08759569999999,
+    "lon": -114.1924757,
+    "low": 2,
+    "medium": 14,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Connaught School",
+    "lat": 51.041619,
+    "lon": -114.087698,
+    "low": 1,
+    "medium": 20,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Earl Grey School",
+    "lat": 51.031087,
+    "lon": -114.0821513,
+    "low": 3,
+    "medium": 8,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Elbow Park School",
+    "lat": 51.0197051,
+    "lon": -114.0822153,
+    "low": 7,
+    "medium": 3,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Glamorgan School",
+    "lat": 51.01535,
+    "lon": -114.1454439,
+    "low": 52,
+    "medium": 60,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Glenbrook School",
+    "lat": 51.02356109999999,
+    "lon": -114.1549542,
+    "low": 1,
+    "medium": 10,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Glenmeadows School",
+    "lat": 51.0351411,
+    "lon": -114.1583703,
+    "low": 5,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Ramsay School",
+    "lat": 51.0331521,
+    "lon": -114.0458173,
+    "low": 2,
+    "medium": 10,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Terrace Road School",
+    "lat": 51.0744224,
+    "lon": -114.1583085,
+    "low": 2,
+    "medium": 7,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Westgate School",
+    "lat": 51.044754,
+    "lon": -114.1595647,
+    "low": 18,
+    "medium": 9,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Wildwood School",
+    "lat": 51.0516175,
+    "lon": -114.1525392,
+    "low": 3,
+    "medium": 15,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "William Reid School",
+    "lat": 51.0218473,
+    "lon": -114.0903786,
+    "low": 7,
+    "medium": 7,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Glendale School",
+    "lat": 51.03241879999999,
+    "lon": -114.1451991,
+    "low": 0,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Banff Trail School",
+    "lat": 51.0815139,
+    "lon": -114.1167717,
+    "low": 11,
+    "medium": 7,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Belfast School",
+    "lat": 51.06324919999999,
+    "lon": -114.0184008,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Brentwood School",
+    "lat": 51.09041389999999,
+    "lon": -114.1237322,
+    "low": 7,
+    "medium": 24,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Briar Hill School",
+    "lat": 51.0630555,
+    "lon": -114.1110374,
+    "low": 3,
+    "medium": 7,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Buchanan School",
+    "lat": 51.08563940000001,
+    "lon": -114.0627519,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Cambrian Heights School",
+    "lat": 51.085491,
+    "lon": -114.088428,
+    "low": 2,
+    "medium": 16,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Capitol Hill School",
+    "lat": 51.07205,
+    "lon": -114.1043593,
+    "low": 3,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Captain John Palliser School",
+    "lat": 51.0964484,
+    "lon": -114.1365187,
+    "low": 4,
+    "medium": 18,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Collingwood School",
+    "lat": 51.0859034,
+    "lon": -114.1034984,
+    "low": 10,
+    "medium": 14,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Dr. E. W. Coffin School",
+    "lat": 51.103473,
+    "lon": -114.134525,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Highwood School",
+    "lat": 51.092259,
+    "lon": -114.076741,
+    "low": 7,
+    "medium": 8,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Hillhurst School",
+    "lat": 51.05919050000001,
+    "lon": -114.0931993,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Huntington Hills School",
+    "lat": 51.1121766,
+    "lon": -114.077623,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Mayland Heights School",
+    "lat": 51.0589319,
+    "lon": -114.0072891,
+    "low": 7,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Mount View School",
+    "lat": 51.0697945,
+    "lon": -114.0522645,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "North Haven School",
+    "lat": 51.0975183,
+    "lon": -114.0866573,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Queen Elizabeth School",
+    "lat": 51.05524279999999,
+    "lon": -114.1021612,
+    "low": 6,
+    "medium": 12,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Rosemont School",
+    "lat": 51.0778831,
+    "lon": -114.0921447,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Catherine Nichols Gunn School",
+    "lat": 51.11176400000001,
+    "lon": -114.057841,
+    "low": 3,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Stanley Jones School",
+    "lat": 51.0598626,
+    "lon": -114.047723,
+    "low": 3,
+    "medium": 26,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Sunnyside School",
+    "lat": 51.05665949999999,
+    "lon": -114.0794432,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Thorncliffe School",
+    "lat": 51.1022188,
+    "lon": -114.0671848,
+    "low": 4,
+    "medium": 8,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "University School",
+    "lat": 51.0698576,
+    "lon": -114.1336787,
+    "low": 3,
+    "medium": 10,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Varsity Acres School",
+    "lat": 51.0910436,
+    "lon": -114.1473402,
+    "low": 10,
+    "medium": 14,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Vista Heights School",
+    "lat": 51.07387569999999,
+    "lon": -114.0171437,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Dalhousie School",
+    "lat": 51.1064908,
+    "lon": -114.1513656,
+    "low": 9,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Marion Carson School",
+    "lat": 51.0929298,
+    "lon": -114.1614241,
+    "low": 4,
+    "medium": 16,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Dr. J. K. Mulloy School",
+    "lat": 51.1189549,
+    "lon": -114.0803067,
+    "low": 11,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Roland Michener School",
+    "lat": 51.0570329,
+    "lon": -113.947443,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Silver Springs School",
+    "lat": 51.105839,
+    "lon": -114.190907,
+    "low": 3,
+    "medium": 8,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "W. O. Mitchell School",
+    "lat": 51.1137187,
+    "lon": -114.1940596,
+    "low": 7,
+    "medium": 10,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Alex Munro School",
+    "lat": 51.1206805,
+    "lon": -114.0613223,
+    "low": 1,
+    "medium": 12,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Deer Run School",
+    "lat": 50.9215174,
+    "lon": -114.0095342,
+    "low": 2,
+    "medium": 12,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Woodbine School",
+    "lat": 50.9365678,
+    "lon": -114.1284187,
+    "low": 5,
+    "medium": 12,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Sundance School",
+    "lat": 50.9006571,
+    "lon": -114.0468466,
+    "low": 11,
+    "medium": 15,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Erin Woods School",
+    "lat": 51.0227088,
+    "lon": -113.9657932,
+    "low": 3,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Janet Johnstone School",
+    "lat": 50.909614,
+    "lon": -114.0797325,
+    "low": 7,
+    "medium": 16,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "O. S. Geiger School",
+    "lat": 51.1048647,
+    "lon": -113.9615928,
+    "low": 3,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Hawkwood School",
+    "lat": 51.1305566,
+    "lon": -114.1789193,
+    "low": 7,
+    "medium": 21,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Acadia School",
+    "lat": 50.9675789,
+    "lon": -114.0531643,
+    "low": 2,
+    "medium": 16,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Braeside School",
+    "lat": 50.9566536,
+    "lon": -114.1016442,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Chinook Park School",
+    "lat": 50.986022,
+    "lon": -114.090099,
+    "low": 11,
+    "medium": 12,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Ethel M. Johnson School",
+    "lat": 50.9554519,
+    "lon": -114.0890473,
+    "low": 2,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Eugene Coste School",
+    "lat": 50.9682139,
+    "lon": -114.086575,
+    "low": 5,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Haysboro School",
+    "lat": 50.9755913,
+    "lon": -114.0889029,
+    "low": 2,
+    "medium": 8,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Keeler School",
+    "lat": 51.0495929,
+    "lon": -113.9645195,
+    "low": 6,
+    "medium": 19,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Le Roi Daniels School",
+    "lat": 50.9840599,
+    "lon": -114.0575979,
+    "low": 11,
+    "medium": 10,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Maple Ridge School",
+    "lat": 50.96196399999999,
+    "lon": -114.0419533,
+    "low": 9,
+    "medium": 8,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Marlborough School",
+    "lat": 51.0564688,
+    "lon": -113.9652603,
+    "low": 0,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Patrick Airlie School",
+    "lat": 51.040123,
+    "lon": -113.976806,
+    "low": 0,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Valley View School",
+    "lat": 51.029956,
+    "lon": -113.9749139,
+    "low": 6,
+    "medium": 19,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Willow Park School",
+    "lat": 50.957982,
+    "lon": -114.0607857,
+    "low": 6,
+    "medium": 87,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Windsor Park School",
+    "lat": 51.0048007,
+    "lon": -114.0742834,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Nellie McClung School",
+    "lat": 50.9686841,
+    "lon": -114.1127964,
+    "low": 2,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Lake Bonavista School",
+    "lat": 50.9445649,
+    "lon": -114.0409428,
+    "low": 4,
+    "medium": 14,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Andrew Sibbald School",
+    "lat": 50.9351524,
+    "lon": -114.0408946,
+    "low": 2,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Cedarbrae School",
+    "lat": 50.9584111,
+    "lon": -114.1331146,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Chris Akkerman School",
+    "lat": 51.0638414,
+    "lon": -113.963009,
+    "low": 7,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Prince of Wales School",
+    "lat": 50.9247637,
+    "lon": -114.0333009,
+    "low": 4,
+    "medium": 12,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Guy Weadick School",
+    "lat": 51.08694819999999,
+    "lon": -113.9530062,
+    "low": 3,
+    "medium": 15,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "West Dalhousie School",
+    "lat": 51.111026,
+    "lon": -114.169514,
+    "low": 0,
+    "medium": 11,
+    "high": 2,
+    "category": 1
+  },
+  {
+    "name": "Dr. Gordon Higgins School",
+    "lat": 51.0752084,
+    "lon": -113.9702309,
+    "low": 14,
+    "medium": 140,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Douglas Harkness School",
+    "lat": 51.0740972,
+    "lon": -113.9460433,
+    "low": 2,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Colonel J. Fred Scott School",
+    "lat": 51.087827,
+    "lon": -113.967829,
+    "low": 2,
+    "medium": 15,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Dr. Gladys McKelvie Egbert School",
+    "lat": 51.0589317,
+    "lon": -113.9415585,
+    "low": 0,
+    "medium": 51,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "G. W. Skene School",
+    "lat": 51.0456377,
+    "lon": -113.9452353,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Cappy Smart School",
+    "lat": 51.063877,
+    "lon": -113.944694,
+    "low": 0,
+    "medium": 10,
+    "high": 1,
+    "category": 1
+  },
+  {
+    "name": "Sam Livingston School",
+    "lat": 50.94576670000001,
+    "lon": -114.06114,
+    "low": 18,
+    "medium": 1,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Canyon Meadows School",
+    "lat": 50.9475337,
+    "lon": -114.0788483,
+    "low": 5,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Penbrooke Meadows School",
+    "lat": 51.041356,
+    "lon": -113.952829,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "West Dover School",
+    "lat": 51.02620599999999,
+    "lon": -113.990728,
+    "low": 1,
+    "medium": 10,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Rundle School",
+    "lat": 51.0711656,
+    "lon": -113.9738041,
+    "low": 6,
+    "medium": 15,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Pineridge School",
+    "lat": 51.0702237,
+    "lon": -113.9448692,
+    "low": 2,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Chief Justice Milvain School",
+    "lat": 51.0839042,
+    "lon": -113.9719103,
+    "low": 7,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Haultain Memorial School",
+    "lat": 50.9397207,
+    "lon": -114.0234047,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Midnapore School",
+    "lat": 50.9149667,
+    "lon": -114.0551688,
+    "low": 4,
+    "medium": 15,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "James Short Memorial School",
+    "lat": 51.048181,
+    "lon": -113.9429478,
+    "low": 1,
+    "medium": 10,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Sunalta School",
+    "lat": 51.0413447,
+    "lon": -114.1109673,
+    "low": 5,
+    "medium": 11,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Banting and Best School",
+    "lat": 50.993753,
+    "lon": -114.0137511,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Woodlands School",
+    "lat": 50.93851000000001,
+    "lon": -114.10784,
+    "low": 2,
+    "medium": 9,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Beddington Heights School",
+    "lat": 51.1317363,
+    "lon": -114.0794331,
+    "low": 2,
+    "medium": 14,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Cecil Swanson School",
+    "lat": 51.0740804,
+    "lon": -113.9677651,
+    "low": 1,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Ranchlands School",
+    "lat": 51.11891199999999,
+    "lon": -114.179288,
+    "low": 2,
+    "medium": 13,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Falconridge School",
+    "lat": 51.0996566,
+    "lon": -113.9453556,
+    "low": 1,
+    "medium": 21,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Abbeydale School",
+    "lat": 51.0567127,
+    "lon": -113.9295485,
+    "low": 2,
+    "medium": 15,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Annie Foote School",
+    "lat": 51.0860559,
+    "lon": -113.9403782,
+    "low": 4,
+    "medium": 16,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Grant MacEwan School",
+    "lat": 51.1062175,
+    "lon": -113.9426508,
+    "low": 4,
+    "medium": 26,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Edgemont School",
+    "lat": 51.129,
+    "lon": -114.143735,
+    "low": 4,
+    "medium": 18,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Olympic Heights School",
+    "lat": 51.0462999,
+    "lon": -114.1806125,
+    "low": 5,
+    "medium": 17,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Simons Valley School",
+    "lat": 51.1397006,
+    "lon": -114.1073741,
+    "low": 5,
+    "medium": 23,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Fish Creek School",
+    "lat": 50.9015965,
+    "lon": -114.0328104,
+    "low": 7,
+    "medium": 16,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "McKenzie Lake School",
+    "lat": 50.9065925,
+    "lon": -113.9847144,
+    "low": 5,
+    "medium": 20,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Riverbend School",
+    "lat": 50.97215,
+    "lon": -114.0185231,
+    "low": 4,
+    "medium": 8,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Colonel Walker School",
+    "lat": 51.03443069999999,
+    "lon": -114.0191732,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "John Ware School",
+    "lat": 50.96364699999999,
+    "lon": -114.1053235,
+    "low": 0,
+    "medium": 75,
+    "high": 4,
+    "category": 1
+  },
+  {
+    "name": "King George School",
+    "lat": 51.0709341,
+    "lon": -114.0844621,
+    "low": 16,
+    "medium": 11,
+    "high": 0,
+    "category": 4
+  },
+  {
+    "name": "Riverside School",
+    "lat": 51.0527951,
+    "lon": -114.0476501,
+    "low": 8,
+    "medium": 36,
+    "high": 9,
+    "category": 2
+  },
+  {
+    "name": "Rideau Park School",
+    "lat": 51.02535289999999,
+    "lon": -114.0755556,
+    "low": 12,
+    "medium": 75,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Thomas B. Riley School",
+    "lat": 51.0877534,
+    "lon": -114.1887428,
+    "low": 3,
+    "medium": 88,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Ian Bazalgette School",
+    "lat": 51.02991189999999,
+    "lon": -113.9774858,
+    "low": 13,
+    "medium": 100,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Rosedale School",
+    "lat": 51.0636811,
+    "lon": -114.0817945,
+    "low": 1,
+    "medium": 14,
+    "high": 16,
+    "category": 1
+  },
+  {
+    "name": "Colonel Macleod School",
+    "lat": 51.0658166,
+    "lon": -114.047888,
+    "low": 14,
+    "medium": 92,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Branton School",
+    "lat": 51.07125569999999,
+    "lon": -114.1084052,
+    "low": 19,
+    "medium": 164,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Colonel Irvine School",
+    "lat": 51.0927052,
+    "lon": -114.0803403,
+    "low": 15,
+    "medium": 117,
+    "high": 4,
+    "category": 3
+  },
+  {
+    "name": "Bob Edwards School",
+    "lat": 51.0597587,
+    "lon": -113.9688003,
+    "low": 2,
+    "medium": 37,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Louis Riel School",
+    "lat": 50.96661779999999,
+    "lon": -114.1323763,
+    "low": 3,
+    "medium": 117,
+    "high": 9,
+    "category": 2
+  },
+  {
+    "name": "Louise Dean School",
+    "lat": 51.044357,
+    "lon": -113.9605177,
+    "low": "*",
+    "medium": "*",
+    "high": "*",
+    "category": 5
+  },
+  {
+    "name": "Elboya School",
+    "lat": 51.0108811,
+    "lon": -114.0782603,
+    "low": 13,
+    "medium": 62,
+    "high": 8,
+    "category": 3
+  },
+  {
+    "name": "Vincent Massey School",
+    "lat": 51.04372739999999,
+    "lon": -114.1529703,
+    "low": 4,
+    "medium": 139,
+    "high": 23,
+    "category": 2
+  },
+  {
+    "name": "Woodman School",
+    "lat": 50.976285,
+    "lon": -114.0836601,
+    "low": 13,
+    "medium": 124,
+    "high": 7,
+    "category": 3
+  },
+  {
+    "name": "Sherwood School",
+    "lat": 50.9939171,
+    "lon": -114.011693,
+    "low": 0,
+    "medium": 40,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Fairview School",
+    "lat": 50.9842917,
+    "lon": -114.0601181,
+    "low": 68,
+    "medium": 77,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Georges P. Vanier School",
+    "lat": 51.0807929,
+    "lon": -114.0519308,
+    "low": 4,
+    "medium": 105,
+    "high": 5,
+    "category": 2
+  },
+  {
+    "name": "A. E. Cross School",
+    "lat": 51.0229637,
+    "lon": -114.1416392,
+    "low": 0,
+    "medium": 91,
+    "high": 13,
+    "category": 1
+  },
+  {
+    "name": "Mount Royal School",
+    "lat": 51.0347854,
+    "lon": -114.094179,
+    "low": 5,
+    "medium": 42,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Senator Patrick Burns School",
+    "lat": 51.088449,
+    "lon": -114.115333,
+    "low": 3,
+    "medium": 99,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "David Thompson School",
+    "lat": 50.9696631,
+    "lon": -114.0550584,
+    "low": 15,
+    "medium": 124,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Harold Panabaker School",
+    "lat": 50.9576449,
+    "lon": -114.0866705,
+    "low": 3,
+    "medium": 89,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Ernest Morrow School",
+    "lat": 51.04332369999999,
+    "lon": -113.9649271,
+    "low": 1,
+    "medium": 136,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Bishop Pinkham School",
+    "lat": 50.9969601,
+    "lon": -114.1308684,
+    "low": 15,
+    "medium": 104,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Simon Fraser School",
+    "lat": 51.1005373,
+    "lon": -114.1366342,
+    "low": 9,
+    "medium": 73,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Sir Wilfrid Laurier School",
+    "lat": 51.045843,
+    "lon": -113.98871,
+    "low": 29,
+    "medium": 49,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Sir John Franklin School",
+    "lat": 51.0596483,
+    "lon": -114.0076595,
+    "low": 0,
+    "medium": 26,
+    "high": 7,
+    "category": 1
+  },
+  {
+    "name": "F. E. Osborne School",
+    "lat": 51.0929411,
+    "lon": -114.163245,
+    "low": 2,
+    "medium": 92,
+    "high": 17,
+    "category": 2
+  },
+  {
+    "name": "Sir John A. Macdonald School",
+    "lat": 51.1115035,
+    "lon": -114.0701769,
+    "low": 2,
+    "medium": 81,
+    "high": 3,
+    "category": 2
+  },
+  {
+    "name": "R. T. Alderman School",
+    "lat": 50.9613248,
+    "lon": -114.0446862,
+    "low": 20,
+    "medium": 73,
+    "high": 3,
+    "category": 3
+  },
+  {
+    "name": "Nickle School",
+    "lat": 50.9410123,
+    "lon": -114.0615556,
+    "low": 13,
+    "medium": 73,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Robert Warren School",
+    "lat": 50.94254429999999,
+    "lon": -114.0848482,
+    "low": 4,
+    "medium": 42,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "H. D. Cartwright School",
+    "lat": 51.1124399,
+    "lon": -114.1612106,
+    "low": 3,
+    "medium": 58,
+    "high": 4,
+    "category": 2
+  },
+  {
+    "name": "Clarence Sansom School",
+    "lat": 51.074683,
+    "lon": -113.9493105,
+    "low": 15,
+    "medium": 118,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Wilma Hansen School",
+    "lat": 50.93237930000001,
+    "lon": -114.0188542,
+    "low": 0,
+    "medium": 42,
+    "high": 3,
+    "category": 1
+  },
+  {
+    "name": "Annie Gale School",
+    "lat": 51.0890369,
+    "lon": -113.9689627,
+    "low": 26,
+    "medium": 120,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Terry Fox School",
+    "lat": 51.1049567,
+    "lon": -113.9454441,
+    "low": 1,
+    "medium": 60,
+    "high": 2,
+    "category": 2
+  },
+  {
+    "name": "Tom Baines School",
+    "lat": 51.1335095,
+    "lon": -114.1570156,
+    "low": 8,
+    "medium": 89,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Queen Elizabeth High School",
+    "lat": 51.0574527,
+    "lon": -114.1021094,
+    "low": 0,
+    "medium": 96,
+    "high": 20,
+    "category": 1
+  },
+  {
+    "name": "Forest Lawn High School",
+    "lat": 51.0427905,
+    "lon": -113.9695423,
+    "low": 25,
+    "medium": 167,
+    "high": 4,
+    "category": 3
+  },
+  {
+    "name": "Crescent Heights High School",
+    "lat": 51.0615678,
+    "lon": -114.0654817,
+    "low": 10,
+    "medium": 161,
+    "high": 22,
+    "category": 2
+  },
+  {
+    "name": "Western Canada High School",
+    "lat": 51.0373447,
+    "lon": -114.0775007,
+    "low": 60,
+    "medium": 199,
+    "high": 9,
+    "category": 3
+  },
+  {
+    "name": "Central Memorial High School",
+    "lat": 51.0083426,
+    "lon": -114.113849,
+    "low": 18,
+    "medium": 175,
+    "high": 15,
+    "category": 3
+  },
+  {
+    "name": "James Fowler High School",
+    "lat": 51.0867665,
+    "lon": -114.0699643,
+    "low": 19,
+    "medium": 172,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "Ernest Manning High School",
+    "lat": 51.0355639,
+    "lon": -114.1902834,
+    "low": 40,
+    "medium": 166,
+    "high": 2,
+    "category": 3
+  },
+  {
+    "name": "William Aberhart High School",
+    "lat": 51.0787915,
+    "lon": -114.1150146,
+    "low": 15,
+    "medium": 127,
+    "high": 9,
+    "category": 3
+  },
+  {
+    "name": "Henry Wise Wood High School",
+    "lat": 50.9863647,
+    "lon": -114.0845217,
+    "low": 28,
+    "medium": 191,
+    "high": 7,
+    "category": 3
+  },
+  {
+    "name": "Bowness High School",
+    "lat": 51.0933557,
+    "lon": -114.2002663,
+    "low": 22,
+    "medium": 142,
+    "high": 8,
+    "category": 3
+  },
+  {
+    "name": "Lord Beaverbrook High School",
+    "lat": 50.9730389,
+    "lon": -114.0617365,
+    "low": 21,
+    "medium": 197,
+    "high": 3,
+    "category": 3
+  },
+  {
+    "name": "Jack James High School",
+    "lat": 51.0442786,
+    "lon": -113.960526,
+    "low": 2,
+    "medium": 51,
+    "high": 1,
+    "category": 3
+  },
+  {
+    "name": "Sir Winston Churchill High School",
+    "lat": 51.1001239,
+    "lon": -114.140082,
+    "low": 29,
+    "medium": 185,
+    "high": 20,
+    "category": 3
+  },
+  {
+    "name": "Dr. E. P. Scarlett High School",
+    "lat": 50.94877880000001,
+    "lon": -114.0879801,
+    "low": 24,
+    "medium": 183,
+    "high": 5,
+    "category": 3
+  },
+  {
+    "name": "John G. Diefenbaker High School",
+    "lat": 51.11280499999999,
+    "lon": -114.0702269,
+    "low": 22,
+    "medium": 138,
+    "high": 8,
+    "category": 3
+  },
+  {
+    "name": "Alternative High School",
+    "lat": 51.0096563,
+    "lon": -114.1095896,
+    "low": 3,
+    "medium": 20,
+    "high": 0,
+    "category": 3
+  },
+  {
+    "name": "Lester B. Pearson High School",
+    "lat": 51.0768985,
+    "lon": -113.9571064,
+    "low": 47,
+    "medium": 158,
+    "high": 0,
+    "category": 3
+  }
+];
+        
+        const map = L.map('map').setView([51.0447, -114.0719], 11);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+        
+        const legend = L.control({position: 'topright'});
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = `
+                <h4>School Categories</h4>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #FF0000;"></span>
+                    <strong>Cat 1:</strong> High Dominant (9)
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #FF8C00;"></span>
+                    <strong>Cat 2:</strong> L&lt;H, L&lt;M, H&lt;M (13)
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #FFD700;"></span>
+                    <strong>Cat 3:</strong> L&lt;M, H&lt;M (179)
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #228B22;"></span>
+                    <strong>Cat 4:</strong> L≥M, H=0 (8)
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #2776EA;"></span>
+                    <strong>Cat 5:</strong> Not Reported (25)
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+        
+        const info = L.control({position: 'topleft'});
+        info.onAdd = function(map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this._div.innerHTML = '<h4>Calgary School Division</h4><p>234 schools categorized<br>Click markers for details</p>';
+            return this._div;
+        };
+        info.addTo(map);
+        
+        function createPopup(school) {
+            let lowClass = school.low === '*' ? 'asterisk-value' : 'low-value';
+            let medClass = school.medium === '*' ? 'asterisk-value' : 'med-value';
+            let highClass = school.high === '*' ? 'asterisk-value' : 'high-value';
+            
+            const catNames = {
+                1: 'Category 1',
+                2: 'Category 2',
+                3: 'Category 3',
+                4: 'Category 4',
+                5: 'Category 5'
+            };
+            
+            const badgeClass = `cat${school.category}-badge`;
+            
+            return `
+                <div class="popup-content">
+                    <div class="school-name">
+                        ${school.name}
+                        <span class="category-badge ${badgeClass}">${catNames[school.category]}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Low:</span>
+                        <span class="data-value ${lowClass}">${school.low}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Medium:</span>
+                        <span class="data-value ${medClass}">${school.medium}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">High:</span>
+                        <span class="data-value ${highClass}">${school.high}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Color mapping
+        const colorMap = {
+            1: '#FF0000',    // Red
+            2: '#FF8C00',    // Orange
+            3: '#FFD700',    // Yellow/Gold
+            4: '#228B22',    // Green
+            5: '#2776EA'     // Blue
+        };
+        
+        let categoryCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+        
+        schools.forEach(school => {
+            const color = colorMap[school.category] || '#808080';
+            
+            categoryCounts[school.category]++;
+            
+            const marker = L.circleMarker([school.lat, school.lon], {
+                radius: 6,
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+            
+            marker.bindPopup(createPopup(school));
+            marker.addTo(map);
+        });
+        
+        console.log('Schools mapped:', schools.length);
+        console.log('Category counts:', categoryCounts);
+    </script>
+</body>
+</html>
